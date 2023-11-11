@@ -11,12 +11,12 @@
 // to identify Opt + j/k --> sed -n l
 
 // Reference implementation: https://iq.opengenus.org/ls-command-in-c/
-void _ls(const char *dir, int op_a, int op_1) {
+void _ls(const char *dir, int op_a, int op_l) {
 	struct dirent *d;
 	DIR *dh = opendir(dir);
 
 	if (!dh) {
-		if (errno = ENOENT){
+		if (errno == ENOENT){
 			perror("Directory doesn't exist");
 		} 
 		else {
@@ -25,31 +25,40 @@ void _ls(const char *dir, int op_a, int op_1) {
 		exit(EXIT_FAILURE);
 	}
 
-	
+	while ((d = readdir(dh)) != NULL){
+		if (!op_a && d->d_name[0] == '.') {
+			continue;
+		}
+		
+		printf("%s ", d->d_name);
+		if (op_l) printf("\n");
+
+	}	
 }
 
 int main(int argc, char *argv[]) {
-	
-	printf("argc: %d   argv: %s\n", argc, argv[1]);
 
-	char * directory_path = ".";	
-	if (argc > 1) {
-		// ! Only get the first arg passed (for now)
-		directory_path = argv[1];
+	if (argc == 1) {
+		_ls(".", 0, 0);
+	}
+	else if (argc == 2) {
+		if (argv[1][0] == '-') {
+			// checking if option is passed
+			// options supporting: a, l
+			int op_a = 0, op_l = 0;
+			char *p = (char*)(argv[1] + 1);
+			while (*p) {
+				if (*p == 'a') op_a = 1;
+				else if (*p == 'l') op_l = 1;
+				else {
+					perror("Option not available");
+					exit(EXIT_FAILURE);
+				}
+				p++;
+			}
+			_ls(".", op_a, op_l);
+		}
 	}
 
-	DIR *d;
-	struct dirent *dir;
-	d = opendir(directory_path);
-	
-	if (!d) {
-		printf("Failed to read dir %s\n", directory_path);
-	}
-	
-	while ((dir = readdir(d)) != NULL) {
-		printf("%-10s   ", dir->d_name);
-	}	
-	closedir(d);
-	
 	return 0;
 }
